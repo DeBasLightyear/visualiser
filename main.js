@@ -3,8 +3,7 @@
 const params = { fullscreen: true, autostart: true }
 const body = document.body
 const two = new Two(params).appendTo(body)
-// two.renderer.domElement.style.background = '#15104D'
-two.renderer.domElement.style.background = 'white'
+two.renderer.domElement.style.background = '#15104D'
 two.bind('update', update)
 
 // track the mouse position
