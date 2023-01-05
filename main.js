@@ -35,6 +35,11 @@ window.addEventListener('keydown', event => {
   }
 })
 
+//reset canvas
+window.addEventListener('mousedown', () => {
+  two.clear()
+})
+
 // utils
 const range = (start, stop, step = 1) => Array.from(
   { length: (stop - start) / step + 1 },
