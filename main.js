@@ -24,6 +24,17 @@ window.addEventListener('mousemove', (event) => {
   mouseVector.y = event.clientY
 })
 
+// pause/resume when pressing space
+window.addEventListener('keydown', event => {
+  if (event.code === 'Space') {
+    if (two.playing) {
+      two.pause()
+    } else {
+      two.play()
+    }
+  }
+})
+
 // utils
 const range = (start, stop, step = 1) => Array.from(
   { length: (stop - start) / step + 1 },
