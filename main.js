@@ -138,7 +138,11 @@ const getColorFromGradient = getGradientFn(config.baseColors, config.nrOfSteps -
 
 function drawLine(start, end, color) {
   const line = two.makeLine(start.x, start.y, end.x, end.y)
+  
+  // style it a bit
   line.stroke = color
+  line.opacity = 0.25
+  line.linewidth = 5
 
   return line
 }
@@ -146,8 +150,8 @@ function drawLine(start, end, color) {
 function update(frameCount, timeDelta) {
   // calculate the angle of a circle
   const angle = (2 * Math.PI / 720) * frameCount
-  
-  const lineLength = 100
+
+  const lineLength = 200
   const start = { x: mouseVector.x, y: mouseVector.y }
   const end = {
     x: (mouseVector.x + (lineLength * Math.cos(angle))),
