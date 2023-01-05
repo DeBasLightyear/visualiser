@@ -1,34 +1,86 @@
-// Make an instance of two and place it on the page.
-const params = { fullscreen: true }
-const canvas = document.body
-const two = new Two(params).appendTo(canvas)
+// utils
+const range = (start, stop, step = 1) => Array.from(
+  { length: (stop - start) / step + 1 },
+  (_, index) => start + index * step
+)
 
-// Two.js has convenient methods to make shapes and insert them into the scene.
-const radius = 50
-let x = two.width * 0.5
-let y = two.height * 0.5 - radius * 1.25
+const normaliseNumber = (min, max, value) => {
+  if (value < min) { return min }
+  if (value > max) { return max }
 
-const circle = two.makeCircle(x, y, radius)
+  return value
+}
 
-y = two.height * 0.5 + radius * 1.25
+// a gradient between two colors
+const gradientFn = (maxNr, startColor, endColor) => (stepNr) => {
+  const formatHex = hex => hex.length === 1
+    ? '0' + hex
+    : hex
 
-const width = 100
-const height = 100
-const rect = two.makeRectangle(x, y, width, height)
+  const calcHex = (number, channelStartBase16, channelEndBase16) => {
+    // colors in base 10
+    const colorStart = parseInt(channelStartBase16, 16)
+    const colorEnd = parseInt(channelEndBase16, 16)
+    const colorPerUnit = (colorEnd - colorStart) / maxNr
+    const colorStep = Math.round(colorPerUnit * number + colorStart)
 
-// The object returned has many stylable properties:
-circle.fill = '#FF8000'
+    // convert to base 16 again
+    return formatHex(colorStep.toString(16))
+  }
 
-// And accepts all valid CSS color:
-circle.stroke = 'orangered'
-circle.linewidth = 5
+  return calcHex(stepNr, startColor.substring(0, 2), endColor.substring(0, 2))
+    + calcHex(stepNr, startColor.substring(2, 4), endColor.substring(2, 4))
+    + calcHex(stepNr, startColor.substring(4, 6), endColor.substring(4, 6))
+}
 
-rect.fill = 'rgb(0, 200, 255)'
-rect.opacity = 0.75
-rect.noStroke()
+// a gradient between an array of given colors
+const getGradientFn = (colors, nrOfSteps) => (step) => {
+  if (step > nrOfSteps || step < 1) {
+    throw new Error(`Supply a number between 1 and ${nrOfSteps}`)
+  }
 
-// Don’t forget to tell two to draw everything to the screen
-two.update()
+  // prepare the gradients
+  const gradients = range(0, colors.length)
+    .map(index => {
+      // pick the current color and the next one
+      const startColor = colors[index]
+      const endColor = colors[index + 1]
 
+      // create a gradient for it starting at 0 until the given nr. of steps
+      return startColor && endColor
+        ? gradientFn(nrOfSteps, startColor, endColor)
+        : undefined
+    })
+    .filter(x => x)
 
-//foobar
+  // determine which slice of the steps each gradient is responsible for
+  const stepsPerGradient = Math.floor(nrOfSteps / gradients.length)
+  const rangePerGradient = gradients.map((gradientFn, index) => {
+    const offset = stepsPerGradient * index
+    const range_ = range(1 + offset, stepsPerGradient + offset)
+
+    return [range_, gradientFn]
+  })
+
+  // determine which gradient we should pick
+  const [_, getColor] = rangePerGradient.find(([range_, _]) => {
+    return range_.includes(step)
+  })
+
+  return getColor(step)
+}
+
+const config = {
+  // the Embrace IT brand colors
+  baseColors: [
+    'e5d755', // green
+    '6dc7dd', // blue
+    'fff8dc', // white-ish
+  ],
+  nrOfSteps: 10,
+}
+
+// prepare the color getter
+const getColorFromGradient = getGradientFn(config.baseColors, config.nrOfSteps)
+console.log(getColorFromGradient(10))
+
