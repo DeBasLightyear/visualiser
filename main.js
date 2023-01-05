@@ -1,9 +1,11 @@
 // GLOBALS
 // Make an instance of two.js and place it on the page.
-const params = { fullscreen: true, autostart: true }
-const body = document.body
-const two = new Two(params).appendTo(body)
-two.renderer.domElement.style.background = '#15104D'
+const two = new Two({
+  fullscreen: true,
+  autostart: true,
+}).appendTo(document.body)
+two.renderer.domElement.style.background = '#1e1f1e'
+two.bind('update', update)
 
 const config = {
   baseColors: [ // the Embrace IT brand colors
@@ -14,13 +16,6 @@ const config = {
   nrOfSteps: 256,
 }
 
-const two = new Two({
-  fullscreen: true,
-  autostart: true,
-}).appendTo(document.body)
-
-two.renderer.domElement.style.background = '#1e1f1e'
-two.bind('update', update)
 
 // track the mouse position
 const mouseVector = new Two.Vector(two.width / 2, two.height / 2)
