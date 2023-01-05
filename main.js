@@ -1,3 +1,19 @@
+// globals
+// Make an instance of two.js and place it on the page.
+const params = { fullscreen: true, autostart: true }
+const body = document.body
+const two = new Two(params).appendTo(body)
+// two.renderer.domElement.style.background = '#15104D'
+two.renderer.domElement.style.background = 'white'
+two.bind('update', update)
+
+// track the mouse position
+const mouseVector = new Two.Vector(two.width / 2, two.height / 2)
+window.addEventListener('mousemove', (event) => {
+  mouseVector.x = event.clientX
+  mouseVector.y = event.clientY
+})
+
 // utils
 const range = (start, stop, step = 1) => Array.from(
   { length: (stop - start) / step + 1 },
@@ -69,8 +85,11 @@ const config = {
     'e5d755', // green
     '6dc7dd', // blue
     'fff8dc', // white-ish
+    // '673ab7',
+    // '4caf50',
+    // 'ff5722',
   ],
-  nrOfSteps: 10,
+  nrOfSteps: 256,
 }
 
 function drawLine(start, end, color) {
@@ -80,20 +99,21 @@ function drawLine(start, end, color) {
   return line
 }
 
+function update(frameCount, timeDelta) {
+  // draw a line
+  console.log(frameCount, timeDelta)
+  const lineLength = 100
+
+  const full_circle = (2 * Math.PI)
+  const angle = (full_circle / 360) * frameCount
+  const start = { x: mouseVector.x, y: mouseVector.y }
+  const end = {
+    x: (mouseVector.x + (lineLength * Math.cos(angle))),
+    y: (mouseVector.y + (lineLength * Math.sin(angle)))
+  }
+
+  drawLine(start, end, 'orange')
+}
+
 // prepare the color getter
 const getColorFromGradient = getGradientFn(config.baseColors, config.nrOfSteps)
-
-// Make an instance of two.js and place it on the page.
-const params = { fullscreen: true }
-const body = document.body
-const two = new Two(params).appendTo(body)
-two.renderer.domElement.style.background = '#15104D'
-
-// track the mouse position
-window.addEventListener('mousemove', function (event) {
-  const start = { x: event.clientX, y: event.clientY }
-  const end = { x: event.clientX + 100, y: event.clientY + 100 }
-  drawLine(start, end, getColorFromGradient(5))
-
-  two.update()
-})
