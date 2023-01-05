@@ -1,9 +1,25 @@
-// globals
+// GLOBALS
 // Make an instance of two.js and place it on the page.
 const params = { fullscreen: true, autostart: true }
 const body = document.body
 const two = new Two(params).appendTo(body)
 two.renderer.domElement.style.background = '#15104D'
+
+const config = {
+  baseColors: [ // the Embrace IT brand colors
+    'e5d755',   // green
+    '6dc7dd',   // blue
+    'fff8dc',   // white-ish
+  ],
+  nrOfSteps: 256,
+}
+
+const two = new Two({
+  fullscreen: true,
+  autostart: true,
+}).appendTo(document.body)
+
+two.renderer.domElement.style.background = '#1e1f1e'
 two.bind('update', update)
 
 // track the mouse position
@@ -13,11 +29,43 @@ window.addEventListener('mousemove', (event) => {
   mouseVector.y = event.clientY
 })
 
+// pause/resume when pressing space
+window.addEventListener('keydown', event => {
+  if (event.code === 'Space') {
+    if (two.playing) {
+      two.pause()
+    } else {
+      two.play()
+    }
+  }
+})
+
 // utils
 const range = (start, stop, step = 1) => Array.from(
   { length: (stop - start) / step + 1 },
   (_, index) => start + index * step
 )
+
+class EternalIterator {
+  constructor(length) {
+    this.index = 0
+    this.length = length
+  }
+
+  next() {
+    const currentValue = this.index
+
+    if (currentValue === this.length - 1) {
+      this.index = 0
+    } else {
+      this.index++
+    }
+
+    return currentValue
+  }
+}
+
+const eternalIterator = new EternalIterator(config.nrOfSteps)
 
 // a gradient between two colors
 const gradientFn = (maxNr, startColor, endColor) => (stepNr) => {
@@ -43,16 +91,23 @@ const gradientFn = (maxNr, startColor, endColor) => (stepNr) => {
 
 // a gradient between an array of given colors
 const getGradientFn = (colors, nrOfSteps) => (step) => {
-  if (step > nrOfSteps || step < 1) {
-    throw new Error(`Supply a number between 1 and ${nrOfSteps}`)
-  }
+  // kept running into missed by 1 errors, used hacky fix
+  const normalisedStep = step > nrOfSteps
+    ? nrOfSteps
+    : step
 
   // prepare the gradients
-  const gradients = range(0, colors.length)
+  const gradientFns = range(0, colors.length)
     .map(index => {
       // pick the current color and the next one
       const startColor = colors[index]
       const endColor = colors[index + 1]
+
+      // loop the gradient back to the first color when we're at the end of 
+      // the color array
+      if (startColor && !endColor) {
+        return gradientFn(nrOfSteps, startColor, colors[0])
+      }
 
       // create a gradient for it starting at 0 until the given nr. of steps
       return startColor && endColor
@@ -62,34 +117,24 @@ const getGradientFn = (colors, nrOfSteps) => (step) => {
     .filter(x => x)
 
   // determine which slice of the steps each gradient is responsible for
-  const stepsPerGradient = Math.floor(nrOfSteps / gradients.length)
-  const rangePerGradient = gradients.map((gradientFn, index) => {
+  const stepsPerGradient = Math.floor(nrOfSteps / gradientFns.length)
+  const rangePerGradient = gradientFns.map((fn, index) => {
     const offset = stepsPerGradient * index
     const range_ = range(1 + offset, stepsPerGradient + offset)
 
-    return [range_, gradientFn]
+    return [range_, fn]
   })
 
   // determine which gradient we should pick
   const [_, getColor] = rangePerGradient.find(([range_, _]) => {
-    return range_.includes(step)
+    return range_.includes(normalisedStep)
   })
 
-  return '#' + getColor(step)
+  return '#' + getColor(normalisedStep)
 }
 
-const config = {
-  // the Embrace IT brand colors
-  baseColors: [
-    'e5d755', // green
-    '6dc7dd', // blue
-    'fff8dc', // white-ish
-    // '673ab7',
-    // '4caf50',
-    // 'ff5722',
-  ],
-  nrOfSteps: 256,
-}
+// prepare the color getter
+const getColorFromGradient = getGradientFn(config.baseColors, config.nrOfSteps - 1)
 
 function drawLine(start, end, color) {
   const line = two.makeLine(start.x, start.y, end.x, end.y)
@@ -99,20 +144,15 @@ function drawLine(start, end, color) {
 }
 
 function update(frameCount, timeDelta) {
-  // draw a line
-  console.log(frameCount, timeDelta)
+  // calculate the angle of a circle
+  const angle = (2 * Math.PI / 720) * frameCount
+  
   const lineLength = 100
-
-  const full_circle = (2 * Math.PI)
-  const angle = (full_circle / 360) * frameCount
   const start = { x: mouseVector.x, y: mouseVector.y }
   const end = {
     x: (mouseVector.x + (lineLength * Math.cos(angle))),
     y: (mouseVector.y + (lineLength * Math.sin(angle)))
   }
 
-  drawLine(start, end, 'orange')
+  drawLine(start, end, getColorFromGradient(eternalIterator.next() + 1))
 }
-
-// prepare the color getter
-const getColorFromGradient = getGradientFn(config.baseColors, config.nrOfSteps)
