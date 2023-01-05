@@ -4,13 +4,6 @@ const range = (start, stop, step = 1) => Array.from(
   (_, index) => start + index * step
 )
 
-const normaliseNumber = (min, max, value) => {
-  if (value < min) { return min }
-  if (value > max) { return max }
-
-  return value
-}
-
 // a gradient between two colors
 const gradientFn = (maxNr, startColor, endColor) => (stepNr) => {
   const formatHex = hex => hex.length === 1
@@ -67,7 +60,7 @@ const getGradientFn = (colors, nrOfSteps) => (step) => {
     return range_.includes(step)
   })
 
-  return getColor(step)
+  return '#' + getColor(step)
 }
 
 const config = {
@@ -80,7 +73,27 @@ const config = {
   nrOfSteps: 10,
 }
 
+function drawLine(start, end, color) {
+  const line = two.makeLine(start.x, start.y, end.x, end.y)
+  line.stroke = color
+
+  return line
+}
+
 // prepare the color getter
 const getColorFromGradient = getGradientFn(config.baseColors, config.nrOfSteps)
-console.log(getColorFromGradient(10))
 
+// Make an instance of two.js and place it on the page.
+const params = { fullscreen: true }
+const body = document.body
+const two = new Two(params).appendTo(body)
+two.renderer.domElement.style.background = '#15104D'
+
+// track the mouse position
+window.addEventListener('mousemove', function (event) {
+  const start = { x: event.clientX, y: event.clientY }
+  const end = { x: event.clientX + 100, y: event.clientY + 100 }
+  drawLine(start, end, getColorFromGradient(5))
+
+  two.update()
+})
